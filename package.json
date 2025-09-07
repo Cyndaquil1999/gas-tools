@@ -1,0 +1,27 @@
+{
+  "name": "gas-tools",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "build:proj": "rimraf projects/$npm_config_proj/dist && tsc -p projects/$npm_config_proj && cpy projects/$npm_config_proj/src/appsscript.json projects/$npm_config_proj/dist/",
+    "push:proj": "npm run build:proj --proj=$npm_config_proj && cd projects/$npm_config_proj && npx clasp push",
+    "open:proj": "cd projects/$npm_config_proj && npx clasp open",
+    "build:notion2discord": "npm run build:proj --proj=notion-to-discord",
+    "push:notion2discord": "npm run push:proj --proj=notion-to-discord",
+    "open:notion2discord": "npm run open:proj --proj=notion-to-discord",
+    "build:all": "run-p build:notion",
+    "push:all": "run-p push:notion"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@google/clasp": "^3.0.6-alpha",
+    "@types/google-apps-script": "^2.0.1",
+    "cpy-cli": "^6.0.0",
+    "npm-run-all": "^4.1.5",
+    "rimraf": "^6.0.1",
+    "typescript": "^5.9.2"
+  }
+}

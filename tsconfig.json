@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "target": "ES2019",
+    "lib": ["ES2019"],
+    "module": "none",
+    "strict": true,
+    "skipLibCheck": true
+  }
+}
