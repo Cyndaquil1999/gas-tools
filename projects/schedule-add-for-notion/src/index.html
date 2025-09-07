@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Schedule Add for Notion</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body {
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto,
+          "Noto Sans JP", sans-serif;
+        line-height: 1.6;
+        padding: 24px;
+      }
+      .card {
+        max-width: 900px;
+        margin: 0 auto;
+        border: 1px solid #ddd;
+        border-radius: 12px;
+        padding: 20px;
+      }
+      textarea {
+        width: 100%;
+        min-height: 220px;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .row {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .btn {
+        padding: 10px 16px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+      }
+      .btn.primary {
+        background: #111;
+        color: #fff;
+        border-color: #111;
+      }
+      .muted {
+        color: #666;
+        font-size: 0.9em;
+      }
+      pre {
+        background: #f7f7f7;
+        padding: 12px;
+        border-radius: 8px;
+        overflow: auto;
+      }
+      .ok {
+        color: #087443;
+      }
+      .ng {
+        color: #b00020;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+      @media (max-width: 900px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Schedule Add for Notion</h1>
+      <p class="muted">
+        JSON を入力（またはファイル選択）して実行。<br />
+        <b>date は JST(+09:00) に正規化、status 省略時は "Not Started"。</b>
+      </p>
+      <pre>
+[
+  { "title": "打合せ", "date": "2025-09-10 10:00" },
+  { "title": "合宿",   "date": { "start": "2025-09-12", "end": "2025-09-14" } }
+]</pre
+      >
+
+      <div class="grid">
+        <div>
+          <label class="muted">JSON入力</label>
+          <textarea
+            id="jsonInput"
+            placeholder='[ { "title": "...", "date": "...", "status": "..." } ]'
+          ></textarea>
+          <div class="row" style="margin-top: 8px">
+            <label
+              ><input type="radio" name="mode" value="create" checked />
+              追加</label
+            >
+            <label
+              ><input type="radio" name="mode" value="delete" />
+              削除（一致ページをアーカイブ）</label
+            >
+          </div>
+        </div>
+        <div>
+          <label class="muted">JSONファイル</label>
+          <input type="file" id="fileInput" accept=".json,application/json" />
+          <p class="muted">ファイルを選ぶと上のテキストに読み込みます。</p>
+          <div id="status"></div>
+          <div id="result"></div>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top: 16px">
+        <button class="btn" id="formatBtn">整形</button>
+        <button class="btn primary" id="sendBtn">実行</button>
+      </div>
+    </div>
+
+    <script>
+      const $ = (s) => document.querySelector(s);
+      const inputEl = $("#jsonInput");
+      const fileEl = $("#fileInput");
+      const formatBtn = $("#formatBtn");
+      const sendBtn = $("#sendBtn");
+      const statusEl = $("#status");
+      const resultEl = $("#result");
+
+      fileEl.addEventListener("change", async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const json = JSON.parse(text);
+          inputEl.value = JSON.stringify(json, null, 2);
+          statusEl.innerHTML =
+            '<span class="ok">✅ ファイルを読み込みました</span>';
+        } catch {
+          statusEl.innerHTML =
+            '<span class="ng">❌ JSON の読み込み/解析に失敗しました</span>';
+        }
+      });
+
+      formatBtn.addEventListener("click", () => {
+        try {
+          const json = JSON.parse(inputEl.value);
+          inputEl.value = JSON.stringify(json, null, 2);
+          statusEl.innerHTML = '<span class="ok">✅ 整形しました</span>';
+        } catch {
+          statusEl.innerHTML =
+            '<span class="ng">❌ JSON を解析できません</span>';
+        }
+      });
+
+      sendBtn.addEventListener("click", () => {
+        let data;
+        try {
+          data = JSON.parse(inputEl.value || "null");
+        } catch {
+          statusEl.innerHTML =
+            '<span class="ng">❌ JSON を解析できません</span>';
+          return;
+        }
+        const mode =
+          (document.querySelector('input[name="mode"]:checked') || {}).value ||
+          "create";
+        statusEl.innerHTML = "⏳ 実行中...";
+        resultEl.innerHTML = "";
+
+        google.script.run
+          .withSuccessHandler((res) => {
+            statusEl.innerHTML = res.ok
+              ? '<span class="ok">✅ 完了</span>'
+              : '<span class="ng">⚠ 一部失敗がありました</span>';
+            const lines = res.results
+              .map((r) =>
+                r.ok
+                  ? `#${r.index}: OK  (${r.id || "-"})`
+                  : `#${r.index}: NG  (${r.error})`
+              )
+              .join("\n");
+            resultEl.innerHTML = `<pre>${lines}</pre>`;
+          })
+          .withFailureHandler((err) => {
+            statusEl.innerHTML = `<span class="ng">❌ エラー: ${
+              err && err.message ? err.message : err
+            }</span>`;
+          })
+          .applyJsonToNotion(data, mode);
+      });
+    </script>
+  </body>
+</html>
