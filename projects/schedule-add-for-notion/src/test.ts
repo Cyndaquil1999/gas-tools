@@ -39,7 +39,6 @@ function testLogJstFromJson(jsonInput: unknown): void {
 
 /* =========================================
  *  以下、テスト用のユーティリティ実装
- *  （本番コードと衝突しないよう *_Test_ 接尾辞を付けています）
  * ========================================= */
 
 /** テキスト/1件/配列 を配列<any> に整形 */
@@ -110,9 +109,7 @@ function toJstIsoWithOffsetTest_(value: unknown): string {
 }
 
 /** Notion の date プロパティに入れる形を作る（time_zone を固定で付与） */
-function buildNotionDatePayloadForTest_(
-  dateVal: any
-): {
+function buildNotionDatePayloadForTest_(dateVal: any): {
   start?: string | null;
   end?: string | null;
   time_zone: "Asia/Tokyo";

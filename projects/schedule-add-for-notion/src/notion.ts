@@ -176,18 +176,16 @@ function notionRequest_(
   payload?: object
 ): any {
   const raw =
-    PropertiesService.getScriptProperties().getProperty("NOTION_API_TOKEN") ||
-    "";
-  const token = raw
-    .replace(/^[\s\u200B\uFEFF]+|[\s\u200B\uFEFF]+$/g, "")
-    .replace(/^['"]|['"]$/g, "");
+    PropertiesService.getScriptProperties().getProperty("NOTION_API_TOKEN");
+  const token = cleanTokenString(raw); // ★ ここだけ置き換え
+
   if (!token) throw new Error("NOTION_API_TOKEN が未設定です。");
 
-  const res = UrlFetchApp.fetch(NOTION_BASE + path, {
+  const res = UrlFetchApp.fetch("https://api.notion.com/v1" + path, {
     method,
     headers: {
       Authorization: `Bearer ${token}`,
-      "Notion-Version": NOTION_VERSION,
+      "Notion-Version": "2022-06-28",
       "Content-Type": "application/json; charset=utf-8",
     },
     payload: payload ? JSON.stringify(payload) : undefined,
@@ -198,6 +196,26 @@ function notionRequest_(
   const text = res.getContentText();
   if (code >= 200 && code < 300) return text ? JSON.parse(text) : {};
   throw new Error(`Notion API Error ${code}: ${text}`);
+}
+
+/**
+ * NOTION_API_TOKEN などに混入しがちな余計な文字を除去して正規化する。
+ * - 前後の空白/改行
+ * - ゼロ幅スペース/ BOM
+ * - 先頭/末尾の引用符
+ */
+function cleanTokenString(raw: string | null | undefined): string {
+  if (!raw) return "";
+  // まず改行を除去（貼り付け時の事故対策）
+  let s = String(raw).replace(/\r?\n/g, "");
+  // 前後空白を粗く除去
+  s = s.trim();
+  // ゼロ幅スペースやBOMを除去
+  s = s.replace(/^[\u200B\uFEFF]+|[\u200B\uFEFF]+$/g, "");
+  // 先頭/末尾のシングル/ダブルクォートを剥がす
+  s = s.replace(/^['"]+|['"]+$/g, "");
+  // 最後にもう一度トリム
+  return s.trim();
 }
 
 /** デバッグ: プロパティ型確認 */
