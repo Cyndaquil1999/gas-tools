@@ -1,6 +1,6 @@
 /** Web UI */
 function doGet(): GoogleAppsScript.HTML.HtmlOutput {
-  return HtmlService.createTemplateFromFile("index")
+  return HtmlService.createTemplateFromFile("html/index")
     .evaluate()
     .setTitle("Schedule Add for Notion")
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -18,6 +18,7 @@ function getColumnMapping(): NotionColumnMapping {
     title: "名前",
     date: "Date",
     status: "Status",
+    timeEstimated: "Estimated Pomodoro",
   };
   if (!raw) return fallback;
   try {
@@ -26,6 +27,7 @@ function getColumnMapping(): NotionColumnMapping {
       title: parsed.title ?? fallback.title,
       date: parsed.date ?? fallback.date,
       status: parsed.status ?? fallback.status,
+      timeEstimated: parsed.timeEstimated ?? fallback.timeEstimated,
     };
   } catch {
     return fallback;

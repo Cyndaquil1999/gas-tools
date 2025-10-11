@@ -130,6 +130,50 @@ function buildProperties_(
 
   props[map.status] = { [statusPropKey]: { name: String(statusVal) } };
 
+
+  // 見積りポモドーロ（Number想定）: 入力キー timeEstimated → カラム名 Estimated Pomodoro
+  if (map.timeEstimated) {
+    const raw = (row as any).timeEstimated;
+    if (raw !== undefined) {
+      // 文字列でも数値でも受け取り、数値化できなければ null を入れる
+      const num =
+        typeof raw === "number"
+          ? raw
+          : typeof raw === "string"
+          ? Number(raw.trim())
+          : NaN;
+
+      // DBスキーマが number 以外だった場合のゆるい安全策（number 以外なら文字列として入れる）
+      const propSchema = schema?.properties?.[map.timeEstimated];
+      const propType = propSchema?.type;
+
+      if (propType === "number" || !propType) {
+        props[map.timeEstimated] = {
+          number: Number.isFinite(num) ? num : null,
+        };
+      } else if (propType === "rich_text") {
+        props[map.timeEstimated] = {
+          rich_text: [
+            {
+              type: "text",
+              text: {
+                content: Number.isFinite(num) ? String(num) : String(raw ?? ""),
+              },
+            },
+          ],
+        };
+      } else if (propType === "select") {
+        props[map.timeEstimated] = {
+          select: {
+            name: Number.isFinite(num) ? String(num) : String(raw ?? ""),
+          },
+        };
+      } else {
+        // それ以外の型はひとまずスキップ（必要になれば分岐を追加）
+      }
+    }
+  }
+
   return props;
 }
 
@@ -229,4 +273,5 @@ function debugNotionPropertyTypes(): void {
   Logger.log("title.type=%s", props[map.title]?.type);
   Logger.log("date.type=%s", props[map.date]?.type);
   Logger.log("status.type=%s", props[map.status]?.type);
+  Logger.log("estimatedPomodoro.type=%s", props[map.timeEstimated]?.type);
 }

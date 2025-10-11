@@ -2,6 +2,7 @@ type NotionColumnMapping = {
   title: string;
   date: string;
   status: string;
+  timeEstimated: string;
 };
 
 type SubmitResult = {

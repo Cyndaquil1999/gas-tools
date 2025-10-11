@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "build:proj": "rimraf projects/$npm_config_proj/dist && tsc -p projects/$npm_config_proj && cpy projects/$npm_config_proj/src/appsscript.json projects/$npm_config_proj/dist/ && cpy projects/$npm_config_proj/src/*.html projects/$npm_config_proj/dist/",
+    "build:proj": "rimraf projects/$npm_config_proj/dist && tsc -p projects/$npm_config_proj && npm run copy:assets --proj=$npm_config_proj",
+    "copy:assets": "mkdir -p projects/$npm_config_proj/dist/html && cp projects/$npm_config_proj/src/html/index.html projects/$npm_config_proj/dist/html/ && cp projects/$npm_config_proj/src/appsscript.json projects/$npm_config_proj/dist/",
     "push:proj": "cd projects/$npm_config_proj && npx clasp push",
     "open:proj": "cd projects/$npm_config_proj && npx clasp open",
     "build:notionToDiscord": "npm run build:proj --proj=notion-to-discord",
